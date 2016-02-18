@@ -1,0 +1,94 @@
+<!DOCTYPE HTML>
+<html ng-app='myApp'>
+<head>
+	<meta charset="utf-8">
+	<title>Blog on MEAN</title>
+	<script src="/bower_components/angular/angular.js"></script>
+</head>
+<body ng-controller='postController as pc'>	
+	{{pc.test}}
+	<h3> Blogging on MEAN: backend relationships.</h3>
+	<H1>Hey HELLO!</H1>
+	<form action='/posts' method="post">
+		<input type="text" name="title"><br>
+		<input type="textarea" name='content'>
+		<input type='submit' value="submit">
+	</form>
+	<ul>
+		<li ng-repeat = "post in pc.posts" >
+			{{post.title}}
+			{{post.content}}
+			<form ng-submit='pc.newComment(comment, post._id)'>
+				<input type='textarea' ng-model='comment.content'>
+				<input type='submit' value='Create Comment'>
+			</form>
+			<span ng-repeat="comment in post.comments">
+
+				{{comment.content}}<br>
+				<form ng-submit= "pc.newComment(othercomment, comment._id, true)">
+					<input type='textarea' ng-model='othercomment.content'>
+					<input type='submit' value='Comment INSIDE comment'>
+				</form>
+				<span ng-repeat="inception in comment.comments">
+					{{inception.content}}<br>
+				</span>
+
+			</span>
+			
+		</li>
+	</ul>
+	<h2>{{pc.gutsy}}</h2>
+	<h5>{{pc.posts}}</h5>
+</body>
+	<script type="text/javascript">
+	console.log('HEYAH')
+	var helloSir=angular.module('myApp', [])
+	.controller('postController', function(postFactory, commentFactory){
+		this.test = 'test';
+		console.log(this.test);
+		var _this= this;
+		this.gutsy='I told ya.';
+
+		this.index = function(){
+			postFactory.index(function(posts){
+				_this.posts=posts;
+			});
+		} 
+		this.index();
+		this.newComment= function(newComment, Id, boolean){
+			var comment = {content: newComment.content}
+			if (boolean == true){
+				comment._commentParent=Id
+			}else{
+				comment.post=Id
+			}
+			commentFactory.create(comment, function(){
+				_this.index();
+			})
+			console.log(comment);
+		}
+	})
+// when creating an array and chaining methods the syntax for obtaining http procedures is DIFFERENT
+	.factory('postFactory',['$http', function ($http){
+		return { 
+			index: function(callback){
+				console.log()
+				$http.get('/posts').then(function(allPost){
+					callback(allPost.data);
+				});
+			}
+		}
+		}])
+	.factory('commentFactory', ['$http', function($http){
+		return{
+			create: function(newComment, callback){
+				console.log(newComment)
+				$http.post('/comments', newComment).then(function(commforPost){
+					console.log(commforPost);
+					callback();
+				})
+			}
+		}
+	}])
+	</script>
+</html>
